@@ -85,47 +85,61 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }else {
                     //
-                    if (path.endsWith(".apk")){
-                        Log.d("apk", "path:"+localFile.getPath());
-                        progressDialog.show();
-
-                        Observable.create((ObservableOnSubscribe<CmdUtils.CommandResult>) emitter -> {
-                            String installCommand = "";
-                            CmdUtils.CommandResult cpResult = null;
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P){
+                    if (FileUtils.isApkType(localFile.getPath())){
+                            AlertDialog sureCancelDialog = new AlertDialog.Builder(MainActivity.this)
+                                    .setMessage("确定安装"+FileUtils.getFileName(localFile.getPath())+"吗?")
+                                    .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialogInterface, int i) {
+                                            dialogInterface.dismiss();
+                                        }
+                                    })
+                                    .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialogInterface, int i) {
+                                            dialogInterface.dismiss();
+                                            progressDialog.show();
+                                            Observable.create((ObservableOnSubscribe<CmdUtils.CommandResult>) emitter -> {
+                                                String installCommand = "";
+                                                CmdUtils.CommandResult cpResult = null;
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P){
 //                            installCommand = " cat " + localFile.getPath() + " | pm install -S "+ localFile.getSize();
-                                String tmpPath = "/data/local/tmp/";
-                                String fileName = FileUtils.getFileName(localFile.getPath());
-                                //拷贝文件
-                                String cp= "cp "+localFile.getPath()+" "+(tmpPath + fileName);
-                                cpResult = CmdUtils.execCommand(cp, true);
-                                if (cpResult.result != 0){
-                                    emitter.onNext(cpResult);
-                                }else{
-                                    installCommand = "pm install " + (tmpPath + fileName);
-                                    CmdUtils.CommandResult result = CmdUtils.execCommand(installCommand, true);
-                                    emitter.onNext(result);
-                                }
-                            }else{
-                                installCommand = "pm install "+ localFile.getPath();
-                                CmdUtils.CommandResult result = CmdUtils.execCommand(installCommand, true);
-                                emitter.onNext(result);
-                            }
-                        }).subscribeOn(Schedulers.io())
-                                .unsubscribeOn(Schedulers.io())
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(result -> {
-                                    progressDialog.dismiss();
-                                    if (result.result == 0){
-                                        //安装成功
-                                        Toast.makeText(MainActivity.this, "安装成功", Toast.LENGTH_LONG).show();
-                                    }else{
-                                        //安装失败
-                                        Toast.makeText(MainActivity.this, "安装失败", Toast.LENGTH_LONG).show();
-                                    }
-                                });
+                                                    String tmpPath = "/data/local/tmp/";
+                                                    String fileName = FileUtils.getFileName(localFile.getPath());
+                                                    //拷贝文件
+                                                    String cp= "cp "+localFile.getPath()+" "+(tmpPath + fileName);
+                                                    cpResult = CmdUtils.execCommand(cp, true);
+                                                    if (cpResult.result != 0){
+                                                        emitter.onNext(cpResult);
+                                                    }else{
+                                                        installCommand = "pm install " + (tmpPath + fileName);
+                                                        CmdUtils.CommandResult result = CmdUtils.execCommand(installCommand, true);
+                                                        emitter.onNext(result);
+                                                    }
+                                                }else{
+                                                    installCommand = "pm install "+ localFile.getPath();
+                                                    CmdUtils.CommandResult result = CmdUtils.execCommand(installCommand, true);
+                                                    emitter.onNext(result);
+                                                }
+                                            }).subscribeOn(Schedulers.io())
+                                                    .unsubscribeOn(Schedulers.io())
+                                                    .observeOn(AndroidSchedulers.mainThread())
+                                                    .subscribe(result -> {
+                                                        progressDialog.dismiss();
+                                                        if (result.result == 0){
+                                                            //安装成功
+                                                            Toast.makeText(MainActivity.this, "安装成功", Toast.LENGTH_LONG).show();
+                                                        }else{
+                                                            //安装失败
+                                                            Toast.makeText(MainActivity.this, "安装失败", Toast.LENGTH_LONG).show();
+                                                        }
+                                                    });
+                                        }
+                                    })
+                                    .create();
+                        sureCancelDialog.show();
                     }else{
-                        Toast.makeText(MainActivity.this, "请选择apk文件", Toast.LENGTH_LONG).show();
+                        Toast.makeText(MainActivity.this, "请选择apk文件", Toast.LENGTH_SHORT).show();
                     }
                 }
             }
